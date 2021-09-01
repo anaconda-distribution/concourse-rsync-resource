@@ -1,0 +1,46 @@
+name: Build and publish rsync image
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
+
+      - name: Login to DockerHub
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        if: github.ref == 'refs/heads/master'
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          platform: linux/amd64
+          file: ./Dockerfile
+          tags: conda/concourse-rsync-resource:latest
+          push: github.ref == 'refs/heads/master'
+
+      - name: Build and push ECR
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          platform: linux/amd64
+          registry: ${{ steps.login-ecr.outputs.registry }}
+          file: ./Dockerfile
+          tags: conda/concourse-rsync-resource:latest
+          push: github.ref == 'refs/heads/master'
