@@ -42,5 +42,5 @@ jobs:
           platform: linux/amd64
           registry: ${{ steps.login-ecr.outputs.registry }}
           file: ./Dockerfile
-          tags: conda/concourse-rsync-resource:latest
+          tags: public.ecr.aws/y0o4y9o3/concourse-rsync-resource:latest
           push: github.ref == 'refs/heads/master'
